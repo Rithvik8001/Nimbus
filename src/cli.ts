@@ -25,42 +25,33 @@ function displayBanner(): void {
 function formatWeatherOutput(data: any): void {
   let content = "";
 
-  // Handle different response types
-  if (data.weather) {
-    if (Array.isArray(data.weather)) {
-      // Multiple cities (comparison)
-      content += chalk.bold.white("🌍 Weather Comparison\n");
-      content += chalk.gray("─".repeat(20)) + "\n\n";
+  // Handle API response from Vercel
+  if (data.location && data.current) {
+    // Location info
+    content += chalk.bold.white(`${data.location.name}, ${data.location.country}\n`);
+    content += chalk.gray("─".repeat(data.location.name.length + data.location.country.length + 2)) + "\n\n";
 
-      data.weather.forEach((weather: any, index: number) => {
-        content += chalk.cyan(`${weather.city}, ${weather.country}\n`);
-        content += `🌡️ ${weather.current.temperature}°F (feels like ${weather.current.feelsLike}°F)\n`;
-        content += `${weather.current.description}\n`;
-        content += `💧 ${weather.current.humidity}% | 🌬️ ${Math.round(weather.current.windSpeed)} mph\n`;
-
-        if (index < data.weather.length - 1) {
-          content += "\n";
-        }
-      });
-    } else {
-      // Single location
-      const weather = data.weather;
-      content += chalk.bold.white(`${weather.city}, ${weather.country}\n`);
-      content +=
-        chalk.gray(
-          "─".repeat(weather.city.length + weather.country.length + 2)
-        ) + "\n\n";
-
-      content += chalk.bold.white("Current Weather\n");
-      content += chalk.gray("─".repeat(15)) + "\n";
-      content += `🌡️ ${weather.current.temperature}°F (feels like ${weather.current.feelsLike}°F)\n`;
-      content += `${weather.current.description}\n`;
-      content += `🌬️ ${Math.round(weather.current.windSpeed)} mph | 💧 ${weather.current.humidity}% | 📊 ${weather.current.pressure}hPa\n`;
-    }
+    // Current weather
+    content += chalk.bold.white("Current Weather\n");
+    content += chalk.gray("─".repeat(15)) + "\n";
+    
+    const tempUnit = data.units === 'metric' ? '°C' : '°F';
+    const windUnit = data.units === 'metric' ? 'km/h' : 'mph';
+    const visibilityUnit = data.units === 'metric' ? 'km' : 'mi';
+    
+    const temp = Math.round(data.units === 'metric' ? data.current.temp_c : data.current.temp_f);
+    const feelsLike = Math.round(data.units === 'metric' ? data.current.feelslike_c : data.current.feelslike_f);
+    const windSpeed = Math.round(data.units === 'metric' ? data.current.wind_kph : data.current.wind_mph);
+    const visibility = data.units === 'metric' ? data.current.vis_km : data.current.vis_miles;
+    
+    content += `☁️ ${temp}${tempUnit} (feels like ${feelsLike}${tempUnit})\n`;
+    content += `${data.current.condition.text}\n`;
+    content += `🌬️ ${windSpeed} ${windUnit} ${data.current.wind_dir} | 💧 ${data.current.humidity}% | 📊 ${data.current.pressure_mb}hPa\n`;
+    content += `👁️ ${visibility}${visibilityUnit} | 🕐 ${new Date(data.location.localtime).toLocaleTimeString()}\n`;
   }
 
   // Handle forecast data
-  if (data.forecast) {
+  if (data.forecast && data.forecast.length > 0) {
     content += "\n\n" + chalk.bold.white("Forecast\n");
     content += chalk.gray("─".repeat(8)) + "\n";
 
@@ -70,28 +61,29 @@ function formatWeatherOutput(data: any): void {
         month: "short",
         day: "numeric",
       });
-      content += `${chalk.cyan(date)} 🌡️ ${day.temperature.min}°F - ${day.temperature.max}°F\n`;
-      content += `   ${day.description} | 💧 ${day.precipitationProbability}% | 🌬️ ${Math.round(day.windSpeed)} mph\n`;
+      
+      const tempUnit = data.units === 'metric' ? '°C' : '°F';
+      const minTemp = Math.round(data.units === 'metric' ? day.day.mintemp_c : day.day.mintemp_f);
+      const maxTemp = Math.round(data.units === 'metric' ? day.day.maxtemp_c : day.day.maxtemp_f);
+      
+      content += `${chalk.cyan(date)} 🌡️ ${minTemp}${tempUnit} - ${maxTemp}${tempUnit}\n`;
+      content += `   ${day.day.condition.text} | 💧 ${day.day.daily_chance_of_rain}% | 💨 ${day.day.avghumidity}%\n`;
     });
   }
 
   // Add AI summary if available
-  if (data.summary) {
+  if (data.aiSummary) {
     content += "\n\n" + chalk.bold.white("AI Summary\n");
     content += chalk.gray("─".repeat(11)) + "\n";
-    content += chalk.white(data.summary) + "\n";
+    content += chalk.white(data.aiSummary) + "\n";
+  }
 
-    // Extract tips from summary (simple approach)
-    if (
-      data.summary.toLowerCase().includes("umbrella") ||
-      data.summary.toLowerCase().includes("rain") ||
-      data.summary.toLowerCase().includes("tip")
-    ) {
-      content += "\n" + chalk.bold.yellow("💡 Tips:\n");
-      content += chalk.dim(
-        "• Check the AI summary above for weather tips and recommendations.\n"
-      );
-    }
+  // Add AI tips if available
+  if (data.aiTips && data.aiTips.length > 0) {
+    content += "\n" + chalk.bold.yellow("💡 Tips:\n");
+    data.aiTips.forEach((tip: string) => {
+      content += chalk.dim(`• ${tip}\n`);
+    });
   }
 
   // Display in a nice box
