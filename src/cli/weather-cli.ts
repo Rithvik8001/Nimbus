@@ -1,0 +1,197 @@
+import chalk from 'chalk';
+import ora from 'ora';
+import { WeatherIntent, WeatherData, WeatherSummary, CliOptions } from '../types/index.js';
+import { openAIService } from '../services/openai.service.js';
+import { openWeatherService } from '../services/openweather.service.js';
+import { geoIPService } from '../services/geoip.service.js';
+import { WeatherRenderer } from './weather-renderer.js';
+
+/**
+ * Main Weather CLI class that orchestrates the weather functionality
+ */
+export class WeatherCLI {
+  private options: CliOptions;
+  private renderer: WeatherRenderer;
+
+  constructor(options: CliOptions) {
+    this.options = {
+      debug: false,
+      units: 'metric',
+      format: 'detailed',
+      ...options,
+    };
+    
+    this.renderer = new WeatherRenderer(this.options);
+  }
+
+  /**
+   * Process a natural language weather query
+   */
+  async processQuery(query: string): Promise<void> {
+    const spinner = ora('Thinking...').start();
+
+    try {
+      // Step 1: Parse the natural language query
+      spinner.text = 'Parsing your request...';
+      const intent = await this.parseIntent(query);
+
+      // Step 2: Resolve location if needed
+      spinner.text = 'Resolving location...';
+      const resolvedIntent = await this.resolveLocation(intent);
+
+      // Step 3: Fetch weather data
+      spinner.text = 'Fetching weather data...';
+      const weatherData = await this.fetchWeatherData(resolvedIntent);
+
+      // Step 4: Generate AI summary (optional)
+      spinner.text = 'Generating summary...';
+      const summary = await this.generateSummary(weatherData, resolvedIntent.extras);
+
+      // Step 5: Render the output
+      spinner.stop();
+      this.renderer.renderWeather(weatherData, summary, resolvedIntent);
+
+    } catch (error) {
+      spinner.stop();
+      throw error;
+    }
+  }
+
+  /**
+   * Parse natural language query into structured intent
+   */
+  private async parseIntent(query: string): Promise<WeatherIntent> {
+    try {
+      return await openAIService.parseIntent(query);
+    } catch (error) {
+      if (this.options.debug) {
+        console.log(chalk.yellow('⚠️  AI parsing failed, using fallback parser'));
+      }
+      return openAIService.parseIntentFallback(query);
+    }
+  }
+
+  /**
+   * Resolve location if useIpLocation is true
+   */
+  private async resolveLocation(intent: WeatherIntent): Promise<WeatherIntent> {
+    if (!intent.useIpLocation) {
+      return intent;
+    }
+
+    try {
+      const location = await geoIPService.getCurrentLocation();
+      const resolvedIntent = { ...intent };
+      
+      if (intent.cities.includes('Unknown')) {
+        resolvedIntent.cities = [location.city];
+      }
+      
+      return resolvedIntent;
+    } catch (error) {
+      throw new Error(`Failed to resolve your location: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Fetch weather data based on the resolved intent
+   */
+  private async fetchWeatherData(intent: WeatherIntent): Promise<WeatherData | WeatherData[]> {
+    const { cities, date, units } = intent;
+
+    // Handle comparison mode
+    if (intent.compare && cities.length >= 2) {
+      const weatherPromises = cities.map(city => 
+        this.fetchWeatherForCity(city, date, units)
+      );
+      return Promise.all(weatherPromises);
+    }
+
+    // Single city mode
+    const city = cities[0];
+    if (!city) {
+      throw new Error('No city specified in the query');
+    }
+
+    return this.fetchWeatherForCity(city, date, units);
+  }
+
+  /**
+   * Fetch weather data for a specific city
+   */
+  private async fetchWeatherForCity(
+    city: string, 
+    date: WeatherIntent['date'], 
+    units: 'metric' | 'imperial'
+  ): Promise<WeatherData> {
+    const days = this.calculateDays(date);
+
+    if (days === 1 && date.kind === 'today') {
+      return openWeatherService.getCurrentWeather(city, units);
+    } else if (days === 1 && date.kind === 'tomorrow') {
+      // For tomorrow, we need forecast data
+      const forecastData = await openWeatherService.getForecast(city, 2, units);
+      if (forecastData.forecast && forecastData.forecast.length > 0) {
+        return {
+          ...forecastData,
+          current: undefined, // Remove current data for tomorrow
+          forecast: [forecastData.forecast[1]], // Get tomorrow's forecast
+        };
+      }
+      return forecastData;
+    } else {
+      return openWeatherService.getForecast(city, days, units);
+    }
+  }
+
+  /**
+   * Calculate the number of days to fetch based on date intent
+   */
+  private calculateDays(date: WeatherIntent['date']): number {
+    switch (date.kind) {
+      case 'today':
+        return 1;
+      case 'tomorrow':
+        return 1;
+      case 'range':
+        if (date.weekend) {
+          return 2;
+        }
+        return date.days || 3; // Default to 3 days if not specified
+      default:
+        return 3;
+    }
+  }
+
+  /**
+   * Generate AI summary of weather data
+   */
+  private async generateSummary(
+    weatherData: WeatherData | WeatherData[], 
+    extras?: string[]
+  ): Promise<WeatherSummary | null> {
+    try {
+      if (Array.isArray(weatherData)) {
+        // For comparison mode, generate summary for the first city
+        return await openAIService.generateSummary(weatherData[0], extras);
+      } else {
+        return await openAIService.generateSummary(weatherData, extras);
+      }
+    } catch (error) {
+      if (this.options.debug) {
+        console.log(chalk.yellow('⚠️  Failed to generate AI summary'));
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Get debug information
+   */
+  getDebugInfo(): object {
+    return {
+      options: this.options,
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

@@ -1,8 +1,13 @@
-import OpenAI from 'openai';
-import { z } from 'zod';
-import { WeatherIntent, WeatherIntentSchema, WeatherData, WeatherSummary } from '../types/index.js';
-import { getConfig } from '../config/index.js';
-import { retry } from '../utils/index.js';
+import OpenAI from "openai";
+import { z } from "zod";
+import {
+  WeatherIntent,
+  WeatherIntentSchema,
+  WeatherData,
+  WeatherSummary,
+} from "../types/index.js";
+import { getConfig } from "../config/index.js";
+import { retry } from "../utils/index.js";
 
 /**
  * OpenAI service for intent parsing and weather summarization
@@ -13,11 +18,11 @@ export class OpenAIService {
 
   constructor() {
     const config = getConfig();
-    this.apiKey = config.get('openaiApiKey');
-    
+    this.apiKey = config.get("openaiApiKey");
+
     this.client = new OpenAI({
       apiKey: this.apiKey,
-      timeout: config.get('timeout'),
+      timeout: config.get("timeout"),
     });
   }
 
@@ -50,41 +55,40 @@ Schema:
 }`;
 
     try {
-      const response = await retry(
-        async () => {
-          const completion = await this.client.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: query },
-            ],
-            temperature: 0.1, // Low temperature for deterministic parsing
-            max_tokens: 200,
-          });
+      const response = await retry(async () => {
+        const completion = await this.client.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: query },
+          ],
+          temperature: 0.1, // Low temperature for deterministic parsing
+          max_tokens: 200,
+        });
 
-          const content = completion.choices[0]?.message?.content;
-          if (!content) {
-            throw new Error('No response from OpenAI');
-          }
+        const content = completion.choices[0]?.message?.content;
+        if (!content) {
+          throw new Error("No response from OpenAI");
+        }
 
-          // Try to extract JSON from the response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) {
-            throw new Error('Invalid JSON response from OpenAI');
-          }
+        // Try to extract JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error("Invalid JSON response from OpenAI");
+        }
 
-          const parsed = JSON.parse(jsonMatch[0]);
-          return parsed;
-        },
-        getConfig().get('retries')
-      );
+        const parsed = JSON.parse(jsonMatch[0]);
+        return parsed;
+      }, getConfig().get("retries"));
 
       // Validate the parsed response with Zod
       const validatedIntent = WeatherIntentSchema.parse(response);
       return validatedIntent;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid intent structure: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(
+          `Invalid intent structure: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw new Error(`Failed to parse intent: ${(error as Error).message}`);
     }
@@ -94,7 +98,7 @@ Schema:
    * Generate weather summary from weather data
    */
   async generateSummary(
-    weatherData: WeatherData, 
+    weatherData: WeatherData,
     extras: string[] = []
   ): Promise<WeatherSummary> {
     const systemPrompt = `You are a concise weather summarizer for a terminal app.
@@ -112,36 +116,37 @@ Return JSON:
 
     try {
       const weatherJson = JSON.stringify(weatherData, null, 2);
-      const extrasText = extras.length > 0 ? `\nUser extras: ${extras.join(', ')}` : '';
+      const extrasText =
+        extras.length > 0 ? `\nUser extras: ${extras.join(", ")}` : "";
 
-      const response = await retry(
-        async () => {
-          const completion = await this.client.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Weather data: ${weatherJson}${extrasText}` },
-            ],
-            temperature: 0.7, // Slightly higher for creative summaries
-            max_tokens: 300,
-          });
+      const response = await retry(async () => {
+        const completion = await this.client.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Weather data: ${weatherJson}${extrasText}`,
+            },
+          ],
+          temperature: 0.7, // Slightly higher for creative summaries
+          max_tokens: 300,
+        });
 
-          const content = completion.choices[0]?.message?.content;
-          if (!content) {
-            throw new Error('No response from OpenAI');
-          }
+        const content = completion.choices[0]?.message?.content;
+        if (!content) {
+          throw new Error("No response from OpenAI");
+        }
 
-          // Try to extract JSON from the response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) {
-            throw new Error('Invalid JSON response from OpenAI');
-          }
+        // Try to extract JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error("Invalid JSON response from OpenAI");
+        }
 
-          const parsed = JSON.parse(jsonMatch[0]);
-          return parsed;
-        },
-        getConfig().get('retries')
-      );
+        const parsed = JSON.parse(jsonMatch[0]);
+        return parsed;
+      }, getConfig().get("retries"));
 
       // Validate the parsed response
       const summarySchema = z.object({
@@ -153,9 +158,13 @@ Return JSON:
       return validatedSummary;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid summary structure: ${error.errors.map(e => e.message).join(', ')}`);
+        throw new Error(
+          `Invalid summary structure: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
-      throw new Error(`Failed to generate summary: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to generate summary: ${(error as Error).message}`
+      );
     }
   }
 
@@ -164,12 +173,13 @@ Return JSON:
    */
   parseIntentFallback(query: string): WeatherIntent {
     const lowerQuery = query.toLowerCase();
-    
+
     // Extract cities (basic pattern matching)
-    const cityPattern = /\b(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s+(?:today|tomorrow|this|next|weekend|weather|forecast)|$)/g;
+    const cityPattern =
+      /\b(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s+(?:today|tomorrow|this|next|weekend|weather|forecast)|$)/g;
     const cities: string[] = [];
     let match;
-    
+
     while ((match = cityPattern.exec(query)) !== null) {
       const city = match[1]?.trim();
       if (city && city.length > 1 && !cities.includes(city)) {
@@ -179,11 +189,11 @@ Return JSON:
 
     // If no cities found, check for common patterns
     if (cities.length === 0) {
-      if (lowerQuery.includes('here') || lowerQuery.includes('my location')) {
+      if (lowerQuery.includes("here") || lowerQuery.includes("my location")) {
         return {
-          cities: ['Unknown'],
-          date: { kind: 'today' },
-          units: 'metric',
+          cities: ["Unknown"],
+          date: { kind: "today" },
+          units: "metric",
           useIpLocation: true,
           compare: false,
         };
@@ -191,36 +201,44 @@ Return JSON:
     }
 
     // Determine date
-    let dateKind: 'today' | 'tomorrow' | 'range' = 'today';
+    let dateKind: "today" | "tomorrow" | "range" = "today";
     let days: number | undefined;
     let weekend = false;
 
-    if (lowerQuery.includes('tomorrow')) {
-      dateKind = 'tomorrow';
-    } else if (lowerQuery.includes('weekend')) {
-      dateKind = 'range';
+    if (lowerQuery.includes("tomorrow")) {
+      dateKind = "tomorrow";
+    } else if (lowerQuery.includes("weekend")) {
+      dateKind = "range";
       weekend = true;
       days = 2;
-    } else if (lowerQuery.includes('forecast') || lowerQuery.includes('next')) {
-      dateKind = 'range';
+    } else if (lowerQuery.includes("forecast") || lowerQuery.includes("next")) {
+      dateKind = "range";
       days = 5;
     }
 
     // Determine units
-    const units = lowerQuery.includes('fahrenheit') || lowerQuery.includes('f') ? 'imperial' : 'metric';
+    const units =
+      lowerQuery.includes("fahrenheit") || lowerQuery.includes("f")
+        ? "imperial"
+        : "metric";
 
     // Extract extras
     const extras: string[] = [];
-    if (lowerQuery.includes('umbrella')) extras.push('umbrella');
-    if (lowerQuery.includes('rain') || lowerQuery.includes('precipitation')) extras.push('precipitation');
-    if (lowerQuery.includes('wind')) extras.push('wind');
-    if (lowerQuery.includes('uv') || lowerQuery.includes('sun')) extras.push('uv');
+    if (lowerQuery.includes("umbrella")) extras.push("umbrella");
+    if (lowerQuery.includes("rain") || lowerQuery.includes("precipitation"))
+      extras.push("precipitation");
+    if (lowerQuery.includes("wind")) extras.push("wind");
+    if (lowerQuery.includes("uv") || lowerQuery.includes("sun"))
+      extras.push("uv");
 
     // Check for comparison
-    const compare = lowerQuery.includes('compare') || lowerQuery.includes('vs') || lowerQuery.includes('versus');
+    const compare =
+      lowerQuery.includes("compare") ||
+      lowerQuery.includes("vs") ||
+      lowerQuery.includes("versus");
 
     return {
-      cities: cities.length > 0 ? cities : ['Unknown'],
+      cities: cities.length > 0 ? cities : ["Unknown"],
       date: { kind: dateKind, days, weekend },
       units,
       extras: extras.length > 0 ? extras : undefined,
