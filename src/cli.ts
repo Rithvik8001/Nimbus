@@ -28,22 +28,36 @@ function formatWeatherOutput(data: any): void {
   // Handle API response from Vercel
   if (data.location && data.current) {
     // Location info
-    content += chalk.bold.white(`${data.location.name}, ${data.location.country}\n`);
-    content += chalk.gray("─".repeat(data.location.name.length + data.location.country.length + 2)) + "\n\n";
+    content += chalk.bold.white(
+      `${data.location.name}, ${data.location.country}\n`
+    );
+    content +=
+      chalk.gray(
+        "─".repeat(data.location.name.length + data.location.country.length + 2)
+      ) + "\n\n";
 
     // Current weather
     content += chalk.bold.white("Current Weather\n");
     content += chalk.gray("─".repeat(15)) + "\n";
-    
-    const tempUnit = data.units === 'metric' ? '°C' : '°F';
-    const windUnit = data.units === 'metric' ? 'km/h' : 'mph';
-    const visibilityUnit = data.units === 'metric' ? 'km' : 'mi';
-    
-    const temp = Math.round(data.units === 'metric' ? data.current.temp_c : data.current.temp_f);
-    const feelsLike = Math.round(data.units === 'metric' ? data.current.feelslike_c : data.current.feelslike_f);
-    const windSpeed = Math.round(data.units === 'metric' ? data.current.wind_kph : data.current.wind_mph);
-    const visibility = data.units === 'metric' ? data.current.vis_km : data.current.vis_miles;
-    
+
+    const tempUnit = data.units === "metric" ? "°C" : "°F";
+    const windUnit = data.units === "metric" ? "km/h" : "mph";
+    const visibilityUnit = data.units === "metric" ? "km" : "mi";
+
+    const temp = Math.round(
+      data.units === "metric" ? data.current.temp_c : data.current.temp_f
+    );
+    const feelsLike = Math.round(
+      data.units === "metric"
+        ? data.current.feelslike_c
+        : data.current.feelslike_f
+    );
+    const windSpeed = Math.round(
+      data.units === "metric" ? data.current.wind_kph : data.current.wind_mph
+    );
+    const visibility =
+      data.units === "metric" ? data.current.vis_km : data.current.vis_miles;
+
     content += `☁️ ${temp}${tempUnit} (feels like ${feelsLike}${tempUnit})\n`;
     content += `${data.current.condition.text}\n`;
     content += `🌬️ ${windSpeed} ${windUnit} ${data.current.wind_dir} | 💧 ${data.current.humidity}% | 📊 ${data.current.pressure_mb}hPa\n`;
@@ -61,11 +75,15 @@ function formatWeatherOutput(data: any): void {
         month: "short",
         day: "numeric",
       });
-      
-      const tempUnit = data.units === 'metric' ? '°C' : '°F';
-      const minTemp = Math.round(data.units === 'metric' ? day.day.mintemp_c : day.day.mintemp_f);
-      const maxTemp = Math.round(data.units === 'metric' ? day.day.maxtemp_c : day.day.maxtemp_f);
-      
+
+      const tempUnit = data.units === "metric" ? "°C" : "°F";
+      const minTemp = Math.round(
+        data.units === "metric" ? day.day.mintemp_c : day.day.mintemp_f
+      );
+      const maxTemp = Math.round(
+        data.units === "metric" ? day.day.maxtemp_c : day.day.maxtemp_f
+      );
+
       content += `${chalk.cyan(date)} 🌡️ ${minTemp}${tempUnit} - ${maxTemp}${tempUnit}\n`;
       content += `   ${day.day.condition.text} | 💧 ${day.day.daily_chance_of_rain}% | 💨 ${day.day.avghumidity}%\n`;
     });
