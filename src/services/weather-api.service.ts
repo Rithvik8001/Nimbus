@@ -14,7 +14,7 @@ export class WeatherApiService {
       process.env["NIMBUS_API_URL"] ||
       (process.env["NODE_ENV"] === "development"
         ? "http://localhost:3000"
-        : "https://nimbus-weather-api.onrender.com");
+        : "https://nimbus-mauve.vercel.app");
 
     this.client = axios.create({
       baseURL: this.baseUrl,
