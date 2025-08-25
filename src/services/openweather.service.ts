@@ -115,7 +115,7 @@ export class OpenWeatherService {
 
       return {
         ...currentData,
-        forecast: forecastData.forecast,
+        forecast: forecastData.forecast || [],
       };
     } catch (error) {
       throw new Error(`Failed to fetch weather data for ${city}: ${(error as Error).message}`);
@@ -127,6 +127,10 @@ export class OpenWeatherService {
    */
   private transformCurrentWeather(data: OpenWeatherCurrent): WeatherData {
     const weather = data.weather[0];
+    
+    if (!weather) {
+      throw new Error('No weather data available');
+    }
     
     return {
       city: data.name,
@@ -159,10 +163,15 @@ export class OpenWeatherService {
       const date = new Date(entry.dt * 1000);
       const dayKey = date.toISOString().split('T')[0];
       
-      if (!groupedByDay.has(dayKey)) {
+      if (dayKey && !groupedByDay.has(dayKey)) {
         groupedByDay.set(dayKey, []);
       }
-      groupedByDay.get(dayKey)!.push(entry);
+      if (dayKey) {
+        const existing = groupedByDay.get(dayKey);
+        if (existing) {
+          existing.push(entry);
+        }
+      }
     });
 
     // Process each day's data
@@ -182,18 +191,42 @@ export class OpenWeatherService {
       const weatherCounts = new Map<string, number>();
       dayEntries.forEach(entry => {
         const weather = entry.weather[0];
-        const key = `${weather.main}-${weather.description}`;
-        weatherCounts.set(key, (weatherCounts.get(key) || 0) + 1);
+        if (weather) {
+          const key = `${weather.main}-${weather.description}`;
+          weatherCounts.set(key, (weatherCounts.get(key) || 0) + 1);
+        }
       });
       
-      const mostCommonWeather = Array.from(weatherCounts.entries())
-        .sort(([,a], [,b]) => b - a)[0][0];
+      const weatherEntries = Array.from(weatherCounts.entries());
+      if (weatherEntries.length === 0) {
+        // Fallback if no weather data
+        forecast.push({
+          date,
+          temperature: {
+            min: Math.min(...temperatures),
+            max: Math.max(...temperatures),
+          },
+          description: 'Unknown',
+          icon: '01d',
+          main: 'Clear',
+          humidity: Math.round(humidities.reduce((a, b) => a + b, 0) / humidities.length),
+          windSpeed: Math.round(windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length * 10) / 10,
+          precipitationProbability: Math.round(
+            Math.max(...precipitationProbs) * 100
+          ),
+        });
+        return;
+      }
+      
+      const sortedEntries = weatherEntries.sort(([,a], [,b]) => b - a);
+      const mostCommonWeather = sortedEntries[0]?.[0] || 'Clear-Unknown';
       const [main, description] = mostCommonWeather.split('-');
       
       // Find the corresponding weather entry for icon
-      const weatherEntry = dayEntries.find(entry => 
-        entry.weather[0].main === main && entry.weather[0].description === description
-      );
+      const weatherEntry = dayEntries.find(entry => {
+        const weather = entry.weather[0];
+        return weather && weather.main === main && weather.description === description;
+      });
 
       forecast.push({
         date,
@@ -202,7 +235,7 @@ export class OpenWeatherService {
           max: Math.max(...temperatures),
         },
         description: description || 'Unknown',
-        icon: weatherEntry?.weather[0].icon || '01d',
+        icon: weatherEntry?.weather[0]?.icon || '01d',
         main: main || 'Clear',
         humidity: Math.round(humidities.reduce((a, b) => a + b, 0) / humidities.length),
         windSpeed: Math.round(windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length * 10) / 10,
@@ -215,7 +248,7 @@ export class OpenWeatherService {
     return {
       city: data.city.name,
       country: data.city.country,
-      forecast,
+      forecast: forecast || [],
     };
   }
 }
