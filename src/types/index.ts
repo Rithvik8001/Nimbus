@@ -1,16 +1,16 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Weather intent schema for parsing natural language queries
  */
 export const WeatherIntentSchema = z.object({
-  cities: z.array(z.string()).min(1, 'At least one city is required'),
+  cities: z.array(z.string()).min(1, "At least one city is required"),
   date: z.object({
-    kind: z.enum(['today', 'tomorrow', 'range']),
+    kind: z.enum(["today", "tomorrow", "range"]),
     days: z.number().optional(),
     weekend: z.boolean().optional(),
   }),
-  units: z.enum(['metric', 'imperial']).default('metric'),
+  units: z.enum(["metric", "imperial"]).default("metric"),
   extras: z.array(z.string()).optional(),
   useIpLocation: z.boolean().default(false),
   compare: z.boolean().default(false),
@@ -97,10 +97,10 @@ export interface OpenWeatherForecast {
     visibility: number;
     pop: number;
     rain?: {
-      '3h': number;
+      "3h": number;
     };
     snow?: {
-      '3h': number;
+      "3h": number;
     };
     sys: {
       pod: string;
@@ -192,6 +192,6 @@ export interface WeatherSummary {
  */
 export interface CliOptions {
   debug?: boolean;
-  units?: 'metric' | 'imperial';
-  format?: 'detailed' | 'simple';
+  units?: "metric" | "imperial";
+  format?: "detailed" | "simple";
 }
