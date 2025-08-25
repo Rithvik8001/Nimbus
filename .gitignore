@@ -16,6 +16,9 @@ build/
 .env.test.local
 .env.production.local
 
+DEPLOYMENT.md
+API.md
+
 # IDE and editor files
 .vscode/
 .idea/

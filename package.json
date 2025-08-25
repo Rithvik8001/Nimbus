@@ -1,11 +1,11 @@
 {
   "name": "nimbus-weather-cli",
-  "version": "1.0.3",
-  "description": "AI-powered Weather CLI with natural language processing",
+  "version": "1.2.0",
+  "description": "Get instant weather forecasts and AI-powered insights from your terminal using natural language queries.",
   "main": "dist/cli.js",
   "type": "module",
   "bin": {
-    "nimbus": "./dist/cli.js"
+    "nimbus": "dist/cli.js"
   },
   "files": [
     "dist/**/*",
@@ -16,8 +16,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
-    "start:server": "node dist/server.js",
-    "dev:server": "tsc --watch & node --watch dist/server.js",
+    "start:dev": "NODE_ENV=development node dist/cli.js",
+    "test:dev": "NODE_ENV=development DEBUG=1 node dist/cli.js",
+    "deploy:build": "npm run clean && npm run build",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
