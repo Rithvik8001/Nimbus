@@ -51,7 +51,7 @@ Schema:
     try {
       const response = await retry(async () => {
         const completion = await this.client.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "gpt-4.1-nano",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: query },
@@ -110,7 +110,7 @@ Return JSON:
 
       const response = await retry(async () => {
         const completion = await this.client.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "gpt-4.1-nano",
           messages: [
             { role: "system", content: systemPrompt },
             {
