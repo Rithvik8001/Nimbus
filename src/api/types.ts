@@ -1,23 +1,25 @@
-import { z } from 'zod';
-import { WeatherData } from '../types/index.js';
+import { z } from "zod";
+import { WeatherData } from "../types/index.js";
 
 // API Request schemas
 export const WeatherQuerySchema = z.object({
-  query: z.string().min(1, 'Query is required'),
-  units: z.enum(['metric', 'imperial']).optional().default('imperial'),
+  query: z.string().min(1, "Query is required"),
+  units: z.enum(["metric", "imperial"]).optional().default("imperial"),
   summary: z.boolean().optional().default(false),
 });
 
 export const LocationQuerySchema = z.object({
-  city: z.string().min(1, 'City is required'),
-  units: z.enum(['metric', 'imperial']).optional().default('imperial'),
+  city: z.string().min(1, "City is required"),
+  units: z.enum(["metric", "imperial"]).optional().default("imperial"),
   days: z.number().min(1).max(10).optional().default(3),
   summary: z.boolean().optional().default(false),
 });
 
 export const CompareQuerySchema = z.object({
-  cities: z.array(z.string().min(1)).min(2, 'At least 2 cities required for comparison'),
-  units: z.enum(['metric', 'imperial']).optional().default('imperial'),
+  cities: z
+    .array(z.string().min(1))
+    .min(2, "At least 2 cities required for comparison"),
+  units: z.enum(["metric", "imperial"]).optional().default("imperial"),
   summary: z.boolean().optional().default(false),
 });
 
@@ -71,12 +73,12 @@ export interface ComparisonApiResponse extends ApiResponse {
 
 export interface HealthResponse extends ApiResponse {
   data: {
-    status: 'healthy' | 'degraded' | 'unhealthy';
+    status: "healthy" | "degraded" | "unhealthy";
     version: string;
     uptime: number;
     services: {
-      openai: 'connected' | 'error';
-      openweather: 'connected' | 'error';
+      openai: "connected" | "error";
+      openweather: "connected" | "error";
     };
   };
 }
@@ -101,7 +103,7 @@ export class ValidationError extends Error {
     public value: any
   ) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
@@ -112,6 +114,6 @@ export class ServiceError extends Error {
     public originalError?: any
   ) {
     super(message);
-    this.name = 'ServiceError';
+    this.name = "ServiceError";
   }
 }

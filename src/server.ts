@@ -29,7 +29,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env['PORT'] || 3000;
+const PORT = process.env["PORT"] || 3000;
 
 // Trust proxy for accurate IP addresses (important for rate limiting)
 app.set("trust proxy", 1);
@@ -65,7 +65,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Logging middleware
-if (process.env['NODE_ENV'] === "production") {
+if (process.env["NODE_ENV"] === "production") {
   app.use(morgan("combined"));
 } else {
   app.use(morgan("dev"));
@@ -82,7 +82,7 @@ app.use("/api", weatherRoutes);
 app.get("/", (_req, res) => {
   res.json({
     name: "Nimbus Weather API",
-    version: process.env['npm_package_version'] || "1.0.0",
+    version: process.env["npm_package_version"] || "1.0.0",
     description: "AI-powered Weather API with natural language processing",
     endpoints: {
       health: "GET /health",
@@ -98,7 +98,7 @@ app.get("/", (_req, res) => {
 });
 
 // 404 handler
-app.use("*", (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: "NOT_FOUND",
@@ -115,7 +115,7 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Nimbus Weather API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`📖 API docs: http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env['NODE_ENV'] || "development"}`);
+  console.log(`🌍 Environment: ${process.env["NODE_ENV"] || "development"}`);
 });
 
 // Handle graceful shutdown

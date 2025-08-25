@@ -66,16 +66,18 @@ router.post(
       const weatherData = await weatherCLI.fetchWeatherData(intent);
 
       // Handle both single WeatherData and array responses
-      const weatherArray = Array.isArray(weatherData) ? weatherData : [weatherData];
+      const weatherArray = Array.isArray(weatherData)
+        ? weatherData
+        : [weatherData];
 
       if (!weatherArray || weatherArray.length === 0) {
         throw new ServiceError("No weather data found", "openweather");
       }
 
       const currentWeather = weatherArray[0];
-      
+
       if (!currentWeather) {
-        throw new ServiceError('No weather data available', 'openweather');
+        throw new ServiceError("No weather data available", "openweather");
       }
 
       // Generate summary if requested
@@ -86,7 +88,10 @@ router.post(
             currentWeather,
             intent.extras || []
           );
-          aiSummary = typeof summaryResult === 'string' ? summaryResult : summaryResult.briefing;
+          aiSummary =
+            typeof summaryResult === "string"
+              ? summaryResult
+              : summaryResult.briefing;
         } catch (error) {
           console.warn("Failed to generate AI summary:", error);
           // Don't fail the request if summary generation fails
@@ -124,23 +129,30 @@ router.get(
       const { city, units, days, summary } = req.query as any;
 
       // Fetch current weather and forecast
+      const forecastDays = days || 3;
+      const weatherUnits = units || "imperial";
+
       const [currentData, forecastData] = await Promise.all([
-        openWeatherService.getCurrentWeather(city, units || "imperial"),
-        openWeatherService.getForecast(city, days || 3, units || "imperial"),
+        openWeatherService.getCurrentWeather(city, weatherUnits),
+        openWeatherService.getForecast(city, forecastDays, weatherUnits),
       ]);
 
       // Extract forecast array and limit to requested days
       const forecastArray = forecastData.forecast || [];
-      const limitedForecast = forecastArray.slice(0, days || 3);
+      const limitedForecast = forecastArray.slice(0, forecastDays);
 
       // Generate summary if requested
       let aiSummary: string | undefined;
       if (summary) {
         try {
-          const summaryResult = await openAIService.generateSummary(currentData, [
-            "forecast",
-          ]);
-          aiSummary = typeof summaryResult === 'string' ? summaryResult : summaryResult.briefing;
+          const summaryResult = await openAIService.generateSummary(
+            currentData,
+            ["forecast"]
+          );
+          aiSummary =
+            typeof summaryResult === "string"
+              ? summaryResult
+              : summaryResult.briefing;
         } catch (error) {
           console.warn("Failed to generate forecast summary:", error);
         }
@@ -153,7 +165,7 @@ router.get(
           forecast: limitedForecast,
           ...(aiSummary && { summary: aiSummary }),
           city,
-          days: days || 3,
+          days: forecastDays,
         },
         timestamp: new Date().toISOString(),
       };
@@ -203,10 +215,14 @@ router.post(
       let aiSummary: string | undefined;
       if (summary && validWeatherData.length > 0) {
         try {
-          const summaryResult = await openAIService.generateSummary(validWeatherData[0], [
-            "compare",
-          ]);
-          aiSummary = typeof summaryResult === 'string' ? summaryResult : summaryResult.briefing;
+          const summaryResult = await openAIService.generateSummary(
+            validWeatherData[0],
+            ["compare"]
+          );
+          aiSummary =
+            typeof summaryResult === "string"
+              ? summaryResult
+              : summaryResult.briefing;
         } catch (error) {
           console.warn("Failed to generate comparison summary:", error);
         }
