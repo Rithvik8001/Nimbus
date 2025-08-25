@@ -30,8 +30,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Step 1: Parse query with OpenAI
     const aiResponse = await parseQueryWithAI(query, units);
 
-    // Step 2: Get weather data
-    const weatherData = await getWeatherData(aiResponse.location, units);
+    // Step 2: Get weather data (pass user IP for geolocation)
+    const userIP = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection?.remoteAddress;
+    const weatherData = await getWeatherData(aiResponse.location, units, userIP as string);
 
     // Step 3: Generate AI summary
     const aiSummary = await generateAISummary(weatherData, query, units);
@@ -151,13 +152,33 @@ function extractDaysFallback(query: string): number {
 }
 
 // Get weather data from OpenWeather
-async function getWeatherData(location: string, units: string) {
+async function getWeatherData(location: string, units: string, userIP?: string) {
   const apiKey = process.env.OPENWEATHER_API_KEY;
   const unitsParam = units === "metric" ? "metric" : "imperial";
 
-  // Handle auto location (use a default for now)
+  // Handle auto location using IP geolocation
   if (location === "auto") {
-    location = "New York,US";
+    try {
+      // Use user's IP for geolocation, or fall back to ip-api's auto-detection
+      const geoUrl = userIP 
+        ? `http://ip-api.com/json/${userIP}` 
+        : 'http://ip-api.com/json/';
+        
+      const ipResponse = await axios.get(geoUrl, {
+        timeout: 5000
+      });
+      
+      if (ipResponse.data.status === 'success') {
+        location = `${ipResponse.data.city},${ipResponse.data.regionName},${ipResponse.data.countryCode}`;
+        console.log(`🌍 Detected location via IP (${userIP || 'auto'}): ${location}`);
+      } else {
+        location = "New York,US"; // Fallback
+        console.log('⚠️  IP geolocation failed, using NYC as fallback');
+      }
+    } catch (error) {
+      location = "New York,US"; // Fallback on error
+      console.log('⚠️  IP geolocation error, using NYC as fallback:', error.message);
+    }
   }
 
   // Get current weather
