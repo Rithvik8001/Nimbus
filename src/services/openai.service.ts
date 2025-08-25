@@ -36,7 +36,7 @@ Output: strict JSON matching the schema below. No prose, no comments.
 Extract intent, cities, date/range, units, and extras. Normalize dates to { kind: "today" | "tomorrow" | "range", days?: number, weekend?: boolean }.
 If city missing and user implies "here", set useIpLocation: true.
 If forecasting without days, default to 3.
-If units unspecified, default to "metric".
+If units unspecified, default to "imperial".
 If compare is requested, require cities.length >= 2.
 Use minimal tokens; be deterministic.
 
@@ -193,7 +193,7 @@ Return JSON:
         return {
           cities: ["Unknown"],
           date: { kind: "today" },
-          units: "metric",
+          units: "imperial",
           useIpLocation: true,
           compare: false,
         };
@@ -218,9 +218,9 @@ Return JSON:
 
     // Determine units
     const units =
-      lowerQuery.includes("fahrenheit") || lowerQuery.includes("f")
-        ? "imperial"
-        : "metric";
+      lowerQuery.includes("celsius") || lowerQuery.includes("c")
+        ? "metric"
+        : "imperial";
 
     // Extract extras
     const extras: string[] = [];

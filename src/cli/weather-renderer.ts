@@ -193,7 +193,11 @@ export class WeatherRenderer {
     content += `${emoji} ${getChalkColor(tempColor).bold(temp)} (feels like ${getChalkColor(tempColor)(feelsLike)})\n`;
     content += `${chalk.gray(current.description)}\n`;
     content += `🌬️  ${windSpeed} ${windDir} | 💧 ${current.humidity}% | 📊 ${current.pressure}hPa\n`;
-    content += `👁️  ${current.visibility / 1000}km | 🕐 ${time}\n`;
+    const visibility =
+      units === "imperial"
+        ? `${Math.round(current.visibility * 0.000621371)}mi`
+        : `${current.visibility / 1000}km`;
+    content += `👁️  ${visibility} | 🕐 ${time}\n`;
 
     return content;
   }

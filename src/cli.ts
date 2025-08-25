@@ -21,7 +21,7 @@ async function main(): Promise<void> {
     .option(
       "-u, --units <units>",
       "Temperature units (metric|imperial)",
-      "metric"
+      "imperial"
     )
     .option(
       "-f, --format <format>",

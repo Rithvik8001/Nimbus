@@ -21,7 +21,7 @@ export class WeatherCLI {
   constructor(options: CliOptions) {
     this.options = {
       debug: false,
-      units: "metric",
+      units: "imperial",
       format: "detailed",
       ...options,
     };
@@ -110,7 +110,8 @@ export class WeatherCLI {
   private async fetchWeatherData(
     intent: WeatherIntent
   ): Promise<WeatherData | WeatherData[]> {
-    const { cities, date, units } = intent;
+    const { cities, date } = intent;
+    const units = intent.units || this.options.units;
 
     // Handle comparison mode
     if (intent.compare && cities.length >= 2) {
