@@ -2,14 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
 import {
   ApiResponse,
-  ApiError,
   ValidationError,
   ServiceError,
 } from "./types.js";
 
 // Request validation middleware
 export const validateRequest = (schema: ZodSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       // Validate query parameters for GET requests, body for POST requests
       const data = req.method === "GET" ? req.query : req.body;
@@ -28,7 +27,7 @@ export const validateRequest = (schema: ZodSchema) => {
         const validationErrors = error.errors.map((err) => ({
           field: err.path.join("."),
           message: err.message,
-          value: err.input,
+          value: (err as any).input || 'unknown',
         }));
 
         const response: ApiResponse = {
@@ -39,7 +38,8 @@ export const validateRequest = (schema: ZodSchema) => {
           data: { validationErrors },
         };
 
-        return res.status(400).json(response);
+        res.status(400).json(response);
+        return;
       }
       next(error);
     }
@@ -49,9 +49,9 @@ export const validateRequest = (schema: ZodSchema) => {
 // Global error handler
 export const errorHandler = (
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   console.error("API Error:", err);
 
@@ -126,23 +126,23 @@ export const requestLogger = (
 };
 
 // Health check middleware
-export const healthCheck = async (req: Request, res: Response) => {
+export const healthCheck = async (_req: Request, res: Response) => {
   const startTime = process.hrtime.bigint();
 
   try {
     // Test service connectivity (basic checks)
-    const services = {
-      openai: "connected" as const,
-      openweather: "connected" as const,
+    const services: { [key: string]: 'connected' | 'error' } = {
+      openai: "connected",
+      openweather: "connected",
     };
 
     // You could add actual service health checks here
     // For now, we'll assume they're healthy if env vars are set
-    if (!process.env.OPENAI_API_KEY) {
-      services.openai = "error";
+    if (!process.env['OPENAI_API_KEY']) {
+      services['openai'] = 'error';
     }
-    if (!process.env.OPENWEATHER_API_KEY) {
-      services.openweather = "error";
+    if (!process.env['OPENWEATHER_API_KEY']) {
+      services['openweather'] = 'error';
     }
 
     const endTime = process.hrtime.bigint();
@@ -157,7 +157,7 @@ export const healthCheck = async (req: Request, res: Response) => {
       success: true,
       data: {
         status,
-        version: process.env.npm_package_version || "1.0.0",
+        version: process.env['npm_package_version'] || "1.0.0",
         uptime: process.uptime(),
         services,
         responseTime: `${responseTime.toFixed(2)}ms`,
@@ -181,7 +181,7 @@ export const healthCheck = async (req: Request, res: Response) => {
 // CORS options
 export const corsOptions = {
   origin:
-    process.env.NODE_ENV === "production"
+    process.env['NODE_ENV'] === "production"
       ? ["https://nimbus-weather.com", "https://www.nimbus-weather.com"] // Replace with your actual domains
       : [
           "http://localhost:3000",
@@ -197,7 +197,7 @@ export const corsOptions = {
 // Rate limiting configuration
 export const rateLimitConfig = {
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "production" ? 100 : 1000, // More lenient in development
+  max: process.env['NODE_ENV'] === "production" ? 100 : 1000, // More lenient in development
   message: {
     success: false,
     error: "RATE_LIMIT_EXCEEDED",

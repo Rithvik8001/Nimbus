@@ -87,7 +87,7 @@ export class WeatherCLI {
     }
   }
 
-  private async fetchWeatherData(
+  public async fetchWeatherData(
     intent: WeatherIntent
   ): Promise<WeatherData | WeatherData[]> {
     const { cities, date } = intent;

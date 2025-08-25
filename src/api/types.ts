@@ -42,7 +42,19 @@ export interface WeatherApiResponse extends ApiResponse {
 export interface ForecastApiResponse extends ApiResponse {
   data: {
     current: WeatherData;
-    forecast: WeatherData[];
+    forecast: Array<{
+      date: Date;
+      temperature: {
+        min: number;
+        max: number;
+      };
+      description: string;
+      icon: string;
+      main: string;
+      humidity: number;
+      windSpeed: number;
+      precipitationProbability: number;
+    }>;
     summary?: string;
     city: string;
     days: number;
