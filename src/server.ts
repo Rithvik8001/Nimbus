@@ -14,10 +14,8 @@ import {
   rateLimitConfig,
 } from "./api/middleware.js";
 
-// Load environment variables
 config();
 
-// Initialize configuration (validates API keys)
 try {
   AppConfig.getInstance();
 } catch (error) {
@@ -31,10 +29,8 @@ try {
 const app = express();
 const PORT = process.env["PORT"] || 3000;
 
-// Trust proxy for accurate IP addresses (important for rate limiting)
 app.set("trust proxy", 1);
 
-// Security middleware
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -53,18 +49,14 @@ app.use(
   })
 );
 
-// CORS configuration
 app.use(cors(corsOptions));
 
-// Rate limiting
 const limiter = rateLimit(rateLimitConfig);
 app.use(limiter);
 
-// Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Logging middleware
 if (process.env["NODE_ENV"] === "production") {
   app.use(morgan("combined"));
 } else {
@@ -72,13 +64,10 @@ if (process.env["NODE_ENV"] === "production") {
   app.use(requestLogger);
 }
 
-// Health check endpoint (before other routes)
 app.get("/health", healthCheck);
 
-// API routes
 app.use("/api", weatherRoutes);
 
-// Root endpoint with API information
 app.get("/", (_req, res) => {
   res.json({
     name: "Nimbus Weather API",
@@ -97,7 +86,6 @@ app.get("/", (_req, res) => {
   });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -107,10 +95,8 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler (must be last)
 app.use(errorHandler);
 
-// Graceful shutdown handling
 const server = app.listen(PORT, () => {
   console.log(`🚀 Nimbus Weather API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
@@ -118,7 +104,6 @@ const server = app.listen(PORT, () => {
   console.log(`🌍 Environment: ${process.env["NODE_ENV"] || "development"}`);
 });
 
-// Handle graceful shutdown
 process.on("SIGTERM", () => {
   console.log("🛑 SIGTERM received, shutting down gracefully");
   server.close(() => {
@@ -135,7 +120,6 @@ process.on("SIGINT", () => {
   });
 });
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("💥 Uncaught Exception:", error);
   process.exit(1);

@@ -16,15 +16,10 @@ import { GeoIPService } from "../services/geoip.service.js";
 
 const router = Router();
 
-// Initialize services (reuse existing CLI infrastructure)
 const openAIService = new OpenAIService();
 const openWeatherService = new OpenWeatherService();
 const geoIPService = new GeoIPService();
 
-/**
- * POST /api/weather
- * Natural language weather query
- */
 router.post(
   "/weather",
   validateRequest(WeatherQuerySchema),
@@ -32,22 +27,18 @@ router.post(
     try {
       const { query, units, summary } = req.body;
 
-      // Create a temporary CLI instance to reuse existing logic
       const weatherCLI = new WeatherCLI({
         units: units || "imperial",
         debug: false,
       });
 
-      // Parse intent using existing AI service
       let intent;
       try {
         intent = await openAIService.parseIntent(query);
       } catch (error) {
-        // Fall back to regex parser if AI fails
         intent = openAIService.parseIntentFallback(query);
       }
 
-      // Resolve location
       let location = intent.cities?.[0] || "unknown";
       if (intent.useIpLocation) {
         try {
@@ -62,10 +53,8 @@ router.post(
         }
       }
 
-      // Fetch weather data
       const weatherData = await weatherCLI.fetchWeatherData(intent);
 
-      // Handle both single WeatherData and array responses
       const weatherArray = Array.isArray(weatherData)
         ? weatherData
         : [weatherData];
@@ -80,7 +69,6 @@ router.post(
         throw new ServiceError("No weather data available", "openweather");
       }
 
-      // Generate summary if requested
       let aiSummary: string | undefined;
       if (summary) {
         try {
@@ -94,7 +82,6 @@ router.post(
               : summaryResult.briefing;
         } catch (error) {
           console.warn("Failed to generate AI summary:", error);
-          // Don't fail the request if summary generation fails
         }
       }
 
@@ -112,15 +99,11 @@ router.post(
       res.json(response);
     } catch (error) {
       console.error("Weather API error:", error);
-      throw error; // Let error handler middleware handle it
+      throw error;
     }
   }
 );
 
-/**
- * GET /api/forecast
- * Get weather forecast for a specific city
- */
 router.get(
   "/forecast",
   validateRequest(LocationQuerySchema),
@@ -128,7 +111,6 @@ router.get(
     try {
       const { city, units, days, summary } = req.query as any;
 
-      // Fetch current weather and forecast
       const forecastDays = days || 3;
       const weatherUnits = units || "imperial";
 
@@ -137,11 +119,9 @@ router.get(
         openWeatherService.getForecast(city, forecastDays, weatherUnits),
       ]);
 
-      // Extract forecast array and limit to requested days
       const forecastArray = forecastData.forecast || [];
       const limitedForecast = forecastArray.slice(0, forecastDays);
 
-      // Generate summary if requested
       let aiSummary: string | undefined;
       if (summary) {
         try {
@@ -178,10 +158,6 @@ router.get(
   }
 );
 
-/**
- * POST /api/compare
- * Compare weather across multiple cities
- */
 router.post(
   "/compare",
   validateRequest(CompareQuerySchema),
@@ -189,19 +165,17 @@ router.post(
     try {
       const { cities, units, summary } = req.body;
 
-      // Fetch weather for all cities in parallel
       const weatherPromises = cities.map((city: string) =>
         openWeatherService
           .getCurrentWeather(city, units || "imperial")
           .catch((error) => {
             console.error(`Failed to fetch weather for ${city}:`, error);
-            return null; // Return null for failed cities
+            return null;
           })
       );
 
       const weatherResults = await Promise.all(weatherPromises);
 
-      // Filter out failed requests
       const validWeatherData = weatherResults.filter((data) => data !== null);
 
       if (validWeatherData.length === 0) {
@@ -211,7 +185,6 @@ router.post(
         );
       }
 
-      // Generate comparison summary if requested
       let aiSummary: string | undefined;
       if (summary && validWeatherData.length > 0) {
         try {
@@ -246,10 +219,6 @@ router.post(
   }
 );
 
-/**
- * GET /api/location
- * Get current location based on IP
- */
 router.get("/location", async (_req: Request, res: Response) => {
   try {
     const geoData = await geoIPService.getCurrentLocation();

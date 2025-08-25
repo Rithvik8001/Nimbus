@@ -2,28 +2,20 @@ import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
 import { ApiResponse, ValidationError, ServiceError } from "./types.js";
 
-// Request validation middleware
 export const validateRequest = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      // Validate query parameters for GET requests, body for POST requests
       let data = req.method === "GET" ? req.query : req.body;
 
-      // Convert query string parameters to appropriate types for GET requests
       if (req.method === "GET" && data) {
         const convertedData: any = {};
         for (const [key, value] of Object.entries(data)) {
           if (typeof value === "string") {
-            // Try to convert to number
             if (!isNaN(Number(value)) && value !== "") {
               convertedData[key] = Number(value);
-            }
-            // Try to convert to boolean
-            else if (value === "true" || value === "false") {
+            } else if (value === "true" || value === "false") {
               convertedData[key] = value === "true";
-            }
-            // Keep as string
-            else {
+            } else {
               convertedData[key] = value;
             }
           } else {
@@ -35,12 +27,8 @@ export const validateRequest = (schema: ZodSchema) => {
 
       const validated = schema.parse(data);
 
-      // Replace the original data with validated data
       if (req.method === "GET") {
-        // Can't directly assign to req.query as it's read-only
-        // Instead, we'll store the validated data in a custom property
         (req as any).validatedQuery = validated;
-        // Also update individual properties that can be modified
         Object.assign(req.query, validated);
       } else {
         req.body = validated;
@@ -71,7 +59,6 @@ export const validateRequest = (schema: ZodSchema) => {
   };
 };
 
-// Global error handler
 export const errorHandler = (
   err: Error,
   _req: Request,
@@ -85,7 +72,6 @@ export const errorHandler = (
   let message = "An unexpected error occurred";
   let details: any = undefined;
 
-  // Handle specific error types
   if (err instanceof ValidationError) {
     statusCode = 400;
     errorCode = "VALIDATION_ERROR";
@@ -117,7 +103,6 @@ export const errorHandler = (
   res.status(statusCode).json(response);
 };
 
-// Request logging middleware
 export const requestLogger = (
   req: Request,
   res: Response,
@@ -141,7 +126,6 @@ export const requestLogger = (
       `[API] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`
     );
 
-    // Log errors for debugging
     if (res.statusCode >= 400) {
       console.error("[API Error]", logData);
     }
@@ -150,19 +134,15 @@ export const requestLogger = (
   next();
 };
 
-// Health check middleware
 export const healthCheck = async (_req: Request, res: Response) => {
   const startTime = process.hrtime.bigint();
 
   try {
-    // Test service connectivity (basic checks)
     const services: { [key: string]: "connected" | "error" } = {
       openai: "connected",
       openweather: "connected",
     };
 
-    // You could add actual service health checks here
-    // For now, we'll assume they're healthy if env vars are set
     if (!process.env["OPENAI_API_KEY"]) {
       services["openai"] = "error";
     }
@@ -171,7 +151,7 @@ export const healthCheck = async (_req: Request, res: Response) => {
     }
 
     const endTime = process.hrtime.bigint();
-    const responseTime = Number(endTime - startTime) / 1000000; // Convert to ms
+    const responseTime = Number(endTime - startTime) / 1000000;
 
     const allHealthy = Object.values(services).every(
       (status) => status === "connected"
@@ -203,11 +183,10 @@ export const healthCheck = async (_req: Request, res: Response) => {
   }
 };
 
-// CORS options
 export const corsOptions = {
   origin:
     process.env["NODE_ENV"] === "production"
-      ? ["https://nimbus-weather.com", "https://www.nimbus-weather.com"] // Replace with your actual domains
+      ? ["https://nimbus-weather.com", "https://www.nimbus-weather.com"]
       : [
           "http://localhost:3000",
           "http://localhost:3001",
@@ -216,13 +195,12 @@ export const corsOptions = {
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
   credentials: false,
-  maxAge: 86400, // 24 hours
+  maxAge: 86400,
 };
 
-// Rate limiting configuration
 export const rateLimitConfig = {
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env["NODE_ENV"] === "production" ? 100 : 1000, // More lenient in development
+  max: process.env["NODE_ENV"] === "production" ? 100 : 1000,
   message: {
     success: false,
     error: "RATE_LIMIT_EXCEEDED",
@@ -231,6 +209,5 @@ export const rateLimitConfig = {
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting for health checks
   skip: (req: Request) => req.path === "/health",
 };

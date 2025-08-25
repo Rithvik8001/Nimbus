@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { WeatherData } from "../types/index.js";
 
-// API Request schemas
 export const WeatherQuerySchema = z.object({
   query: z.string().min(1, "Query is required"),
   units: z.enum(["metric", "imperial"]).optional().default("imperial"),
@@ -23,7 +22,6 @@ export const CompareQuerySchema = z.object({
   summary: z.boolean().optional().default(false),
 });
 
-// API Response types
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -83,12 +81,10 @@ export interface HealthResponse extends ApiResponse {
   };
 }
 
-// Validation middleware types
 export type WeatherQuery = z.infer<typeof WeatherQuerySchema>;
 export type LocationQuery = z.infer<typeof LocationQuerySchema>;
 export type CompareQuery = z.infer<typeof CompareQuerySchema>;
 
-// Error types
 export interface ApiError {
   code: string;
   message: string;
