@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "mkdir -p public && echo 'API Only' > public/index.html",
   "env": {
     "NODE_ENV": "production"
   },
