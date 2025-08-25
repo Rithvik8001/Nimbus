@@ -1,54 +1,28 @@
-#!/usr/bin/env node
-
-import express from "express";
-import cors from "cors";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import axios from "axios";
-import dotenv from "dotenv";
 
-// Load environment variables
-dotenv.config();
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-const app = express();
-const port = process.env["PORT"] || 3000;
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-// Environment validation
-const requiredEnvVars = ["OPENAI_API_KEY", "OPENWEATHER_API_KEY"];
-const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.error(
-    "❌ Missing required environment variables:",
-    missingEnvVars.join(", ")
-  );
-  process.exit(1);
-}
-
-// Health check endpoint
-app.get("/health", (_req, res) => {
-  res.json({
-    status: "healthy",
-    version: "1.2.1",
-    responseTime: "Fast",
-    timestamp: new Date().toISOString(),
-    environment: process.env["NODE_ENV"] || "development",
-  });
-});
-
-// Weather endpoint
-app.post("/api/weather", async (req, res) => {
   try {
     const { query, units = "imperial" } = req.body;
 
     if (!query) {
-      res.status(400).json({
+      return res.status(400).json({
         error: "Bad Request",
         message: "Query parameter is required",
       });
-      return;
     }
 
     console.log(`🌤️  Processing weather query: "${query}" (units: ${units})`);
@@ -92,7 +66,7 @@ app.post("/api/weather", async (req, res) => {
       });
     }
   }
-});
+}
 
 // Parse query with OpenAI
 async function parseQueryWithAI(query: string, units: string) {
@@ -125,7 +99,7 @@ Examples:
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env["OPENAI_API_KEY"]}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -178,7 +152,7 @@ function extractDaysFallback(query: string): number {
 
 // Get weather data from OpenWeather
 async function getWeatherData(location: string, units: string) {
-  const apiKey = process.env["OPENWEATHER_API_KEY"];
+  const apiKey = process.env.OPENWEATHER_API_KEY;
   const unitsParam = units === "metric" ? "metric" : "imperial";
 
   // Handle auto location (use a default for now)
@@ -336,7 +310,7 @@ Return JSON: {"summary": "brief weather summary", "tips": ["tip1", "tip2", "tip3
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env["OPENAI_API_KEY"]}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -355,34 +329,3 @@ Return JSON: {"summary": "brief weather summary", "tips": ["tip1", "tip2", "tip3
     };
   }
 }
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Not Found",
-    message: `Endpoint ${req.method} ${req.originalUrl} not found`,
-  });
-});
-
-// Start server (only for local development)
-if (process.env["NODE_ENV"] !== "production") {
-  app.listen(port, () => {
-    console.log(
-      `🚀 Nimbus Weather API Server running on http://localhost:${port}`
-    );
-    console.log(`📡 Health check: http://localhost:${port}/health`);
-    console.log(`🌤️  Weather API: POST http://localhost:${port}/api/weather`);
-    console.log(
-      `🔑 Using OpenAI API: ${process.env["OPENAI_API_KEY"] ? "✅" : "❌"}`
-    );
-    console.log(
-      `🔑 Using OpenWeather API: ${process.env["OPENWEATHER_API_KEY"] ? "✅" : "❌"}`
-    );
-    console.log(
-      `\n💡 Now test with: NODE_ENV=development node dist/cli.js weather "weather in Paris"`
-    );
-  });
-}
-
-// Export for Vercel
-export default app;
