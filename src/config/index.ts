@@ -43,9 +43,27 @@ export class AppConfig {
         const missingVars = error.errors
           .map((err) => err.path.join("."))
           .join(", ");
-        throw new Error(
-          `Missing or invalid environment variables: ${missingVars}`
-        );
+
+        // Provide user-friendly setup instructions
+        const setupInstructions = `
+❌ Missing API Keys
+
+To use Nimbus Weather CLI, you need to set up your API keys:
+
+1. Get your API keys:
+   • OpenAI API Key: https://platform.openai.com/api-keys
+   • OpenWeather API Key: https://openweathermap.org/api
+
+2. Create a .env file in your home directory:
+   echo "OPENAI_API_KEY=your_openai_key_here" > ~/.env
+   echo "OPENWEATHER_API_KEY=your_openweather_key_here" >> ~/.env
+
+3. Try again: nimbus weather "what's the weather in Miami?"
+
+Missing variables: ${missingVars}
+        `.trim();
+
+        throw new Error(setupInstructions);
       }
       throw error;
     }
