@@ -2,11 +2,16 @@
   "name": "nimbus-weather-cli",
   "version": "1.0.1",
   "description": "AI-powered Weather CLI with natural language processing",
-  "main": "dist/index.js",
+  "main": "dist/cli.js",
   "type": "module",
   "bin": {
     "nimbus": "./dist/cli.js"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
