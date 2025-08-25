@@ -1,6 +1,6 @@
 {
   "name": "nimbus-weather-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered Weather CLI with natural language processing",
   "main": "dist/index.js",
   "type": "module",
