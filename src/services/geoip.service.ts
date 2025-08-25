@@ -3,9 +3,6 @@ import { GeoLocation } from "../types/index.js";
 import { getConfig } from "../config/index.js";
 import { retry } from "../utils/index.js";
 
-/**
- * GeoIP service for getting user's location from IP address
- */
 export class GeoIPService {
   private client: AxiosInstance;
 
@@ -18,7 +15,6 @@ export class GeoIPService {
       },
     });
 
-    // Add response interceptor for error handling
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -37,9 +33,6 @@ export class GeoIPService {
     );
   }
 
-  /**
-   * Get current location from IP address
-   */
   async getCurrentLocation(): Promise<GeoLocation> {
     try {
       const response = await retry(
@@ -49,7 +42,6 @@ export class GeoIPService {
 
       const data = response.data;
 
-      // Validate required fields
       if (!data.city || !data.country || !data.lat || !data.lon) {
         throw new Error("Invalid location data received from GeoIP service");
       }
@@ -69,9 +61,6 @@ export class GeoIPService {
     }
   }
 
-  /**
-   * Get location for a specific IP address
-   */
   async getLocationByIP(ip: string): Promise<GeoLocation> {
     try {
       const response = await retry(
@@ -81,12 +70,10 @@ export class GeoIPService {
 
       const data = response.data;
 
-      // Check if the IP lookup was successful
       if (data.status === "fail") {
         throw new Error(`IP lookup failed: ${data.message || "Unknown error"}`);
       }
 
-      // Validate required fields
       if (!data.city || !data.country || !data.lat || !data.lon) {
         throw new Error("Invalid location data received from GeoIP service");
       }
@@ -106,9 +93,6 @@ export class GeoIPService {
     }
   }
 
-  /**
-   * Get location by coordinates (reverse geocoding)
-   */
   async getLocationByCoordinates(
     lat: number,
     lon: number
@@ -121,7 +105,6 @@ export class GeoIPService {
 
       const data = response.data;
 
-      // Validate required fields
       if (!data.city || !data.country || !data.lat || !data.lon) {
         throw new Error("Invalid location data received from GeoIP service");
       }
@@ -141,9 +124,6 @@ export class GeoIPService {
     }
   }
 
-  /**
-   * Validate if a location object is complete
-   */
   isValidLocation(location: Partial<GeoLocation>): location is GeoLocation {
     return !!(
       location.city &&
@@ -153,9 +133,6 @@ export class GeoIPService {
     );
   }
 
-  /**
-   * Format location for display
-   */
   formatLocation(location: GeoLocation): string {
     const parts = [location.city];
 
@@ -169,7 +146,4 @@ export class GeoIPService {
   }
 }
 
-/**
- * Export singleton instance
- */
 export const geoIPService = new GeoIPService();

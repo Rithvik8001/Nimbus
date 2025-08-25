@@ -17,17 +17,11 @@ import {
   getTemperatureColor,
 } from "../utils/index.js";
 
-/**
- * Get chalk color function safely
- */
 const getChalkColor = (color: string) => {
   const chalkColors: Record<string, any> = chalk;
   return chalkColors[color] || chalk.white;
 };
 
-/**
- * Weather renderer for beautiful terminal output
- */
 export class WeatherRenderer {
   private options: CliOptions;
 
@@ -35,9 +29,6 @@ export class WeatherRenderer {
     this.options = options;
   }
 
-  /**
-   * Render weather data with beautiful formatting
-   */
   renderWeather(
     weatherData: WeatherData | WeatherData[],
     summary: WeatherSummary | null,
@@ -54,9 +45,6 @@ export class WeatherRenderer {
     }
   }
 
-  /**
-   * Render the Nimbus banner
-   */
   private renderBanner(): void {
     const banner = figlet.textSync("NIMBUS", {
       font: "Standard",
@@ -68,9 +56,6 @@ export class WeatherRenderer {
     console.log(chalk.gray("AI-Powered Weather CLI") + "\n");
   }
 
-  /**
-   * Render single city weather
-   */
   private renderSingleCity(
     weatherData: WeatherData,
     summary: WeatherSummary | null,
@@ -79,31 +64,25 @@ export class WeatherRenderer {
     const { city, country, current, forecast } = weatherData;
     const location = `${city}, ${country}`;
 
-    // Create the main content
     let content = "";
 
-    // Location header
     content += chalk.bold.white(`${location}\n`);
     content += chalk.gray("─".repeat(location.length + 2)) + "\n\n";
 
-    // Current weather (if available)
     if (current) {
       content += this.renderCurrentWeather(current, intent.units);
       content += "\n";
     }
 
-    // Forecast (if available)
     if (forecast && forecast.length > 0) {
       content += this.renderForecast(forecast, intent.units);
       content += "\n";
     }
 
-    // AI Summary (if available)
     if (summary) {
       content += this.renderSummary(summary);
     }
 
-    // Wrap in a beautiful box
     const boxedContent = boxen(content, {
       padding: 1,
       margin: 1,
@@ -115,9 +94,6 @@ export class WeatherRenderer {
     console.log(boxedContent);
   }
 
-  /**
-   * Render comparison between multiple cities
-   */
   private renderComparison(
     weatherDataArray: WeatherData[],
     summary: WeatherSummary | null,
@@ -171,9 +147,6 @@ export class WeatherRenderer {
     console.log(boxedContent);
   }
 
-  /**
-   * Render current weather information
-   */
   private renderCurrentWeather(
     current: WeatherData["current"],
     units: "metric" | "imperial"
@@ -202,9 +175,6 @@ export class WeatherRenderer {
     return content;
   }
 
-  /**
-   * Render forecast information
-   */
   private renderForecast(
     forecast: WeatherData["forecast"],
     units: "metric" | "imperial"
@@ -229,9 +199,6 @@ export class WeatherRenderer {
     return content;
   }
 
-  /**
-   * Render AI summary
-   */
   private renderSummary(summary: WeatherSummary): string {
     let content = "\n" + chalk.bold.white("AI Summary\n");
     content += chalk.gray("─".repeat(11)) + "\n";
@@ -247,9 +214,6 @@ export class WeatherRenderer {
     return content;
   }
 
-  /**
-   * Render error message
-   */
   renderError(message: string, details?: string): void {
     const content =
       chalk.red(`❌ ${message}`) + (details ? "\n" + chalk.gray(details) : "");
@@ -265,9 +229,6 @@ export class WeatherRenderer {
     console.log(boxedContent);
   }
 
-  /**
-   * Render debug information
-   */
   renderDebug(info: object): void {
     if (!this.options.debug) return;
 

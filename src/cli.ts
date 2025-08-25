@@ -5,14 +5,10 @@ import chalk from "chalk";
 import { getConfig } from "./config/index.js";
 import { WeatherCLI } from "./cli/weather-cli.js";
 
-/**
- * Main CLI entry point
- */
 async function main(): Promise<void> {
   const program = new Command();
   const config = getConfig();
 
-  // Set up the CLI program
   program
     .name("nimbus")
     .description("AI-powered Weather CLI with natural language processing")
@@ -29,29 +25,24 @@ async function main(): Promise<void> {
       "detailed"
     );
 
-  // Add the weather command
   program
     .command("weather")
     .description("Get weather information using natural language")
     .argument("[query...]", "Natural language weather query")
     .action(async (query: string[], options: any) => {
       try {
-        // Validate API keys
         config.validateApiKeys();
 
-        // Set debug mode
         if (options.debug) {
           config.getConfig().debug = true;
         }
 
-        // Create weather CLI instance
         const weatherCLI = new WeatherCLI({
           debug: options.debug || config.isDebug(),
           units: options.units,
           format: options.format,
         });
 
-        // Process the query
         const queryString = query.join(" ");
         if (!queryString.trim()) {
           console.log(chalk.blue("🌤️  Welcome to Nimbus Weather CLI!"));
@@ -87,7 +78,6 @@ async function main(): Promise<void> {
       }
     });
 
-  // Add help command
   program
     .command("help")
     .description("Show detailed help information")
@@ -135,7 +125,6 @@ async function main(): Promise<void> {
       console.log(chalk.gray('  • "temperature in Celsius for Berlin"'));
     });
 
-  // Parse command line arguments
   try {
     await program.parseAsync();
   } catch (error) {
@@ -151,7 +140,6 @@ async function main(): Promise<void> {
   }
 }
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error(chalk.red("❌ Uncaught Exception:"), error.message);
   if (getConfig().isDebug() && error.stack) {
@@ -160,13 +148,11 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on("unhandledRejection", (reason) => {
   console.error(chalk.red("❌ Unhandled Rejection:"), reason);
   process.exit(1);
 });
 
-// Run the CLI
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     console.error(chalk.red("❌ Fatal Error:"), error.message);

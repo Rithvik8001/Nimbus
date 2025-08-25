@@ -1,10 +1,3 @@
-/**
- * Utility functions for the Nimbus Weather CLI
- */
-
-/**
- * Map OpenWeather weather conditions to emojis
- */
 export const getWeatherEmoji = (main: string, description: string): string => {
   const weatherMap: Record<string, string> = {
     Clear: "☀️",
@@ -24,7 +17,6 @@ export const getWeatherEmoji = (main: string, description: string): string => {
     Tornado: "🌪️",
   };
 
-  // Check for specific conditions in description
   const desc = description.toLowerCase();
   if (desc.includes("thunderstorm")) return "⛈️";
   if (desc.includes("drizzle")) return "🌦️";
@@ -37,9 +29,6 @@ export const getWeatherEmoji = (main: string, description: string): string => {
   return weatherMap[main] || "🌡️";
 };
 
-/**
- * Format temperature with units
- */
 export const formatTemperature = (
   temp: number,
   units: "metric" | "imperial"
@@ -48,9 +37,6 @@ export const formatTemperature = (
   return `${Math.round(temp)}${symbol}`;
 };
 
-/**
- * Format wind speed with units
- */
 export const formatWindSpeed = (
   speed: number,
   units: "metric" | "imperial"
@@ -59,9 +45,6 @@ export const formatWindSpeed = (
   return `${Math.round(speed)} ${unit}`;
 };
 
-/**
- * Format date for display
- */
 export const formatDate = (date: Date): string => {
   return date.toLocaleDateString("en-US", {
     weekday: "short",
@@ -70,9 +53,6 @@ export const formatDate = (date: Date): string => {
   });
 };
 
-/**
- * Format time for display
- */
 export const formatTime = (date: Date): string => {
   return date.toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -81,9 +61,6 @@ export const formatTime = (date: Date): string => {
   });
 };
 
-/**
- * Get relative time description
- */
 export const getRelativeTime = (date: Date): string => {
   const now = new Date();
   const diffInHours =
@@ -99,9 +76,6 @@ export const getRelativeTime = (date: Date): string => {
   return formatDate(date);
 };
 
-/**
- * Convert wind direction degrees to cardinal direction
- */
 export const getWindDirection = (degrees: number): string => {
   const directions = [
     "N",
@@ -125,9 +99,6 @@ export const getWindDirection = (degrees: number): string => {
   return directions[index] || "N";
 };
 
-/**
- * Get UV index description
- */
 export const getUvDescription = (uv: number): string => {
   if (uv <= 2) return "Low";
   if (uv <= 5) return "Moderate";
@@ -136,9 +107,6 @@ export const getUvDescription = (uv: number): string => {
   return "Extreme";
 };
 
-/**
- * Get UV emoji
- */
 export const getUvEmoji = (uv: number): string => {
   if (uv <= 2) return "😎";
   if (uv <= 5) return "😐";
@@ -147,9 +115,6 @@ export const getUvEmoji = (uv: number): string => {
   return "☠️";
 };
 
-/**
- * Group forecast data by day
- */
 export const groupForecastByDay = <T extends { date: Date }>(
   forecast: T[]
 ): Map<string, T[]> => {
@@ -171,9 +136,6 @@ export const groupForecastByDay = <T extends { date: Date }>(
   return grouped;
 };
 
-/**
- * Retry function with exponential backoff
- */
 export const retry = async <T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
@@ -191,7 +153,6 @@ export const retry = async <T>(
         throw lastError;
       }
 
-      // Exponential backoff
       const waitTime = delay * Math.pow(2, i);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
@@ -200,30 +161,19 @@ export const retry = async <T>(
   throw lastError!;
 };
 
-/**
- * Validate city name format
- */
 export const isValidCityName = (city: string): boolean => {
-  // Basic validation: city should be 2-50 characters, alphanumeric with spaces and common punctuation
   const cityRegex = /^[a-zA-Z\s\-'\.]{2,50}$/;
   return cityRegex.test(city.trim());
 };
 
-/**
- * Normalize city name
- */
 export const normalizeCityName = (city: string): string => {
   return city.trim().replace(/\s+/g, " ");
 };
 
-/**
- * Get temperature color based on value and units
- */
 export const getTemperatureColor = (
   temp: number,
   units: "metric" | "imperial"
 ): string => {
-  // Convert to Celsius for consistent color mapping
   const tempC = units === "imperial" ? ((temp - 32) * 5) / 9 : temp;
 
   if (tempC < 0) return "blue";

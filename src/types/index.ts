@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/**
- * Weather intent schema for parsing natural language queries
- */
 export const WeatherIntentSchema = z.object({
   cities: z.array(z.string()).min(1, "At least one city is required"),
   date: z.object({
@@ -18,9 +15,6 @@ export const WeatherIntentSchema = z.object({
 
 export type WeatherIntent = z.infer<typeof WeatherIntentSchema>;
 
-/**
- * OpenWeather API response types
- */
 export interface OpenWeatherCurrent {
   coord: {
     lon: number;
@@ -122,9 +116,6 @@ export interface OpenWeatherForecast {
   };
 }
 
-/**
- * Normalized weather data for internal use
- */
 export interface WeatherData {
   city: string;
   country: string;
@@ -156,9 +147,6 @@ export interface WeatherData {
   }>;
 }
 
-/**
- * Geo-location data from IP
- */
 export interface GeoLocation {
   city: string;
   country: string;
@@ -168,9 +156,6 @@ export interface GeoLocation {
   timezone: string;
 }
 
-/**
- * CLI configuration
- */
 export interface Config {
   openaiApiKey: string;
   openweatherApiKey: string;
@@ -179,17 +164,11 @@ export interface Config {
   retries: number;
 }
 
-/**
- * Weather summary from AI
- */
 export interface WeatherSummary {
   briefing: string;
   tips: string[];
 }
 
-/**
- * CLI command options
- */
 export interface CliOptions {
   debug?: boolean;
   units?: "metric" | "imperial";

@@ -11,9 +11,6 @@ import { openWeatherService } from "../services/openweather.service.js";
 import { geoIPService } from "../services/geoip.service.js";
 import { WeatherRenderer } from "./weather-renderer.js";
 
-/**
- * Main Weather CLI class that orchestrates the weather functionality
- */
 export class WeatherCLI {
   private options: CliOptions;
   private renderer: WeatherRenderer;
@@ -29,33 +26,25 @@ export class WeatherCLI {
     this.renderer = new WeatherRenderer(this.options);
   }
 
-  /**
-   * Process a natural language weather query
-   */
   async processQuery(query: string): Promise<void> {
     const spinner = ora("Thinking...").start();
 
     try {
-      // Step 1: Parse the natural language query
       spinner.text = "Parsing your request...";
       const intent = await this.parseIntent(query);
 
-      // Step 2: Resolve location if needed
       spinner.text = "Resolving location...";
       const resolvedIntent = await this.resolveLocation(intent);
 
-      // Step 3: Fetch weather data
       spinner.text = "Fetching weather data...";
       const weatherData = await this.fetchWeatherData(resolvedIntent);
 
-      // Step 4: Generate AI summary (optional)
       spinner.text = "Generating summary...";
       const summary = await this.generateSummary(
         weatherData,
         resolvedIntent.extras
       );
 
-      // Step 5: Render the output
       spinner.stop();
       this.renderer.renderWeather(weatherData, summary, resolvedIntent);
     } catch (error) {
@@ -64,9 +53,6 @@ export class WeatherCLI {
     }
   }
 
-  /**
-   * Parse natural language query into structured intent
-   */
   private async parseIntent(query: string): Promise<WeatherIntent> {
     try {
       return await openAIService.parseIntent(query);
@@ -80,9 +66,6 @@ export class WeatherCLI {
     }
   }
 
-  /**
-   * Resolve location if useIpLocation is true
-   */
   private async resolveLocation(intent: WeatherIntent): Promise<WeatherIntent> {
     if (!intent.useIpLocation) {
       return intent;
@@ -104,16 +87,12 @@ export class WeatherCLI {
     }
   }
 
-  /**
-   * Fetch weather data based on the resolved intent
-   */
   private async fetchWeatherData(
     intent: WeatherIntent
   ): Promise<WeatherData | WeatherData[]> {
     const { cities, date } = intent;
     const units = intent.units || this.options.units;
 
-    // Handle comparison mode
     if (intent.compare && cities.length >= 2) {
       const weatherPromises = cities.map((city) =>
         this.fetchWeatherForCity(city, date, units)
@@ -121,7 +100,6 @@ export class WeatherCLI {
       return Promise.all(weatherPromises);
     }
 
-    // Single city mode
     const city = cities[0];
     if (!city) {
       throw new Error("No city specified in the query");
@@ -130,9 +108,6 @@ export class WeatherCLI {
     return this.fetchWeatherForCity(city, date, units);
   }
 
-  /**
-   * Fetch weather data for a specific city
-   */
   private async fetchWeatherForCity(
     city: string,
     date: WeatherIntent["date"],
@@ -143,7 +118,6 @@ export class WeatherCLI {
     if (days === 1 && date.kind === "today") {
       return openWeatherService.getCurrentWeather(city, units);
     } else if (days === 1 && date.kind === "tomorrow") {
-      // For tomorrow, we need forecast data
       const forecastData = await openWeatherService.getForecast(city, 2, units);
       if (forecastData.forecast && forecastData.forecast.length > 1) {
         const tomorrowForecast = forecastData.forecast[1];
@@ -151,7 +125,7 @@ export class WeatherCLI {
           return {
             city: forecastData.city,
             country: forecastData.country,
-            forecast: [tomorrowForecast], // Get tomorrow's forecast
+            forecast: [tomorrowForecast],
           };
         }
       }
@@ -161,9 +135,6 @@ export class WeatherCLI {
     }
   }
 
-  /**
-   * Calculate the number of days to fetch based on date intent
-   */
   private calculateDays(date: WeatherIntent["date"]): number {
     switch (date.kind) {
       case "today":
@@ -174,22 +145,18 @@ export class WeatherCLI {
         if (date.weekend) {
           return 2;
         }
-        return date.days || 3; // Default to 3 days if not specified
+        return date.days || 3;
       default:
         return 3;
     }
   }
 
-  /**
-   * Generate AI summary of weather data
-   */
   private async generateSummary(
     weatherData: WeatherData | WeatherData[],
     extras?: string[]
   ): Promise<WeatherSummary | null> {
     try {
       if (Array.isArray(weatherData)) {
-        // For comparison mode, generate summary for the first city
         const firstCity = weatherData[0];
         if (firstCity) {
           return await openAIService.generateSummary(firstCity, extras);
@@ -206,9 +173,6 @@ export class WeatherCLI {
     }
   }
 
-  /**
-   * Get debug information
-   */
   getDebugInfo(): object {
     return {
       options: this.options,

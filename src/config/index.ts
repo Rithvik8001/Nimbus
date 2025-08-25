@@ -2,12 +2,8 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import { Config } from "../types/index.js";
 
-// Load environment variables
 dotenv.config();
 
-/**
- * Environment variables schema for validation
- */
 const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   OPENWEATHER_API_KEY: z.string().min(1, "OPENWEATHER_API_KEY is required"),
@@ -16,9 +12,6 @@ const EnvSchema = z.object({
     .default("development"),
 });
 
-/**
- * Configuration class for managing app settings
- */
 export class AppConfig {
   private static instance: AppConfig;
   private config: Config;
@@ -27,9 +20,6 @@ export class AppConfig {
     this.config = this.loadConfig();
   }
 
-  /**
-   * Get singleton instance of AppConfig
-   */
   public static getInstance(): AppConfig {
     if (!AppConfig.instance) {
       AppConfig.instance = new AppConfig();
@@ -37,12 +27,8 @@ export class AppConfig {
     return AppConfig.instance;
   }
 
-  /**
-   * Load and validate configuration from environment variables
-   */
   private loadConfig(): Config {
     try {
-      // Validate environment variables
       const env = EnvSchema.parse(process.env);
 
       return {
@@ -65,30 +51,18 @@ export class AppConfig {
     }
   }
 
-  /**
-   * Get the current configuration
-   */
   public getConfig(): Config {
     return { ...this.config };
   }
 
-  /**
-   * Get a specific configuration value
-   */
   public get<K extends keyof Config>(key: K): Config[K] {
     return this.config[key];
   }
 
-  /**
-   * Check if debug mode is enabled
-   */
   public isDebug(): boolean {
     return this.config.debug;
   }
 
-  /**
-   * Validate that all required API keys are present
-   */
   public validateApiKeys(): void {
     if (!this.config.openaiApiKey) {
       throw new Error(
@@ -103,7 +77,4 @@ export class AppConfig {
   }
 }
 
-/**
- * Export a convenience function to get the config instance
- */
 export const getConfig = (): AppConfig => AppConfig.getInstance();

@@ -7,9 +7,6 @@ import {
 import { getConfig } from "../config/index.js";
 import { retry } from "../utils/index.js";
 
-/**
- * OpenWeather API service for fetching weather data
- */
 export class OpenWeatherService {
   private client: AxiosInstance;
   private apiKey: string;
@@ -26,7 +23,6 @@ export class OpenWeatherService {
       },
     });
 
-    // Add request interceptor for API key
     this.client.interceptors.request.use((config) => {
       config.params = {
         ...config.params,
@@ -35,7 +31,6 @@ export class OpenWeatherService {
       return config;
     });
 
-    // Add response interceptor for error handling
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error) => {
@@ -64,9 +59,6 @@ export class OpenWeatherService {
     );
   }
 
-  /**
-   * Get current weather for a city
-   */
   async getCurrentWeather(
     city: string,
     units: "metric" | "imperial" = "metric"
@@ -91,9 +83,6 @@ export class OpenWeatherService {
     }
   }
 
-  /**
-   * Get weather forecast for a city
-   */
   async getForecast(
     city: string,
     days: number = 5,
@@ -106,7 +95,7 @@ export class OpenWeatherService {
             params: {
               q: city,
               units,
-              cnt: Math.min(days * 8, 40), // OpenWeather provides 3-hour intervals, max 40 entries
+              cnt: Math.min(days * 8, 40),
             },
           }),
         getConfig().get("retries")
@@ -120,9 +109,6 @@ export class OpenWeatherService {
     }
   }
 
-  /**
-   * Get both current weather and forecast for a city
-   */
   async getWeatherAndForecast(
     city: string,
     days: number = 5,
@@ -145,9 +131,6 @@ export class OpenWeatherService {
     }
   }
 
-  /**
-   * Transform OpenWeather current weather response to internal format
-   */
   private transformCurrentWeather(data: OpenWeatherCurrent): WeatherData {
     const weather = data.weather[0];
 
@@ -174,9 +157,6 @@ export class OpenWeatherService {
     };
   }
 
-  /**
-   * Transform OpenWeather forecast response to internal format
-   */
   private transformForecast(
     data: OpenWeatherForecast,
     days: number
@@ -184,7 +164,6 @@ export class OpenWeatherService {
     const forecast: WeatherData["forecast"] = [];
     const groupedByDay = new Map<string, typeof data.list>();
 
-    // Group forecast entries by day
     data.list.forEach((entry) => {
       const date = new Date(entry.dt * 1000);
       const dayKey = date.toISOString().split("T")[0];
@@ -200,20 +179,17 @@ export class OpenWeatherService {
       }
     });
 
-    // Process each day's data
     const sortedDays = Array.from(groupedByDay.keys()).sort().slice(0, days);
 
     sortedDays.forEach((dayKey) => {
       const dayEntries = groupedByDay.get(dayKey)!;
       const date = new Date(dayKey);
 
-      // Calculate daily averages and extremes
       const temperatures = dayEntries.map((entry) => entry.main.temp);
       const humidities = dayEntries.map((entry) => entry.main.humidity);
       const windSpeeds = dayEntries.map((entry) => entry.wind.speed);
       const precipitationProbs = dayEntries.map((entry) => entry.pop);
 
-      // Get the most common weather condition for the day
       const weatherCounts = new Map<string, number>();
       dayEntries.forEach((entry) => {
         const weather = entry.weather[0];
@@ -225,7 +201,6 @@ export class OpenWeatherService {
 
       const weatherEntries = Array.from(weatherCounts.entries());
       if (weatherEntries.length === 0) {
-        // Fallback if no weather data
         forecast.push({
           date,
           temperature: {
@@ -253,7 +228,6 @@ export class OpenWeatherService {
       const mostCommonWeather = sortedEntries[0]?.[0] || "Clear-Unknown";
       const [main, description] = mostCommonWeather.split("-");
 
-      // Find the corresponding weather entry for icon
       const weatherEntry = dayEntries.find((entry) => {
         const weather = entry.weather[0];
         return (
@@ -293,7 +267,4 @@ export class OpenWeatherService {
   }
 }
 
-/**
- * Export singleton instance
- */
 export const openWeatherService = new OpenWeatherService();

@@ -9,9 +9,6 @@ import {
 import { getConfig } from "../config/index.js";
 import { retry } from "../utils/index.js";
 
-/**
- * OpenAI service for intent parsing and weather summarization
- */
 export class OpenAIService {
   private client: OpenAI;
   private apiKey: string;
@@ -26,9 +23,6 @@ export class OpenAIService {
     });
   }
 
-  /**
-   * Parse natural language query into structured intent
-   */
   async parseIntent(query: string): Promise<WeatherIntent> {
     const systemPrompt = `You are a weather intent parser for a CLI.
 Input: a free-form user question.
@@ -62,7 +56,7 @@ Schema:
             { role: "system", content: systemPrompt },
             { role: "user", content: query },
           ],
-          temperature: 0.1, // Low temperature for deterministic parsing
+          temperature: 0.1,
           max_tokens: 200,
         });
 
@@ -71,7 +65,6 @@ Schema:
           throw new Error("No response from OpenAI");
         }
 
-        // Try to extract JSON from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error("Invalid JSON response from OpenAI");
@@ -81,7 +74,6 @@ Schema:
         return parsed;
       }, getConfig().get("retries"));
 
-      // Validate the parsed response with Zod
       const validatedIntent = WeatherIntentSchema.parse(response);
       return validatedIntent;
     } catch (error) {
@@ -94,9 +86,6 @@ Schema:
     }
   }
 
-  /**
-   * Generate weather summary from weather data
-   */
   async generateSummary(
     weatherData: WeatherData,
     extras: string[] = []
@@ -129,7 +118,7 @@ Return JSON:
               content: `Weather data: ${weatherJson}${extrasText}`,
             },
           ],
-          temperature: 0.7, // Slightly higher for creative summaries
+          temperature: 0.7,
           max_tokens: 300,
         });
 
@@ -138,7 +127,6 @@ Return JSON:
           throw new Error("No response from OpenAI");
         }
 
-        // Try to extract JSON from the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error("Invalid JSON response from OpenAI");
@@ -148,7 +136,6 @@ Return JSON:
         return parsed;
       }, getConfig().get("retries"));
 
-      // Validate the parsed response
       const summarySchema = z.object({
         briefing: z.string().min(1),
         tips: z.array(z.string()).min(0),
@@ -168,13 +155,9 @@ Return JSON:
     }
   }
 
-  /**
-   * Fallback parser for when AI parsing fails
-   */
   parseIntentFallback(query: string): WeatherIntent {
     const lowerQuery = query.toLowerCase();
 
-    // Extract cities (basic pattern matching)
     const cityPattern =
       /\b(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s+(?:today|tomorrow|this|next|weekend|weather|forecast)|$)/g;
     const cities: string[] = [];
@@ -187,7 +170,6 @@ Return JSON:
       }
     }
 
-    // If no cities found, check for common patterns
     if (cities.length === 0) {
       if (lowerQuery.includes("here") || lowerQuery.includes("my location")) {
         return {
@@ -200,7 +182,6 @@ Return JSON:
       }
     }
 
-    // Determine date
     let dateKind: "today" | "tomorrow" | "range" = "today";
     let days: number | undefined;
     let weekend = false;
@@ -216,13 +197,11 @@ Return JSON:
       days = 5;
     }
 
-    // Determine units
     const units =
       lowerQuery.includes("celsius") || lowerQuery.includes("c")
         ? "metric"
         : "imperial";
 
-    // Extract extras
     const extras: string[] = [];
     if (lowerQuery.includes("umbrella")) extras.push("umbrella");
     if (lowerQuery.includes("rain") || lowerQuery.includes("precipitation"))
@@ -231,7 +210,6 @@ Return JSON:
     if (lowerQuery.includes("uv") || lowerQuery.includes("sun"))
       extras.push("uv");
 
-    // Check for comparison
     const compare =
       lowerQuery.includes("compare") ||
       lowerQuery.includes("vs") ||
@@ -248,7 +226,4 @@ Return JSON:
   }
 }
 
-/**
- * Export singleton instance
- */
 export const openAIService = new OpenAIService();

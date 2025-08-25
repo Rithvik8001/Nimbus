@@ -1,5 +1,5 @@
 {
-  "name": "nimbus",
+  "name": "nimbus-weather-cli",
   "version": "1.0.0",
   "description": "AI-powered Weather CLI with natural language processing",
   "main": "dist/index.js",
@@ -24,9 +24,15 @@
     "openai",
     "openweather",
     "typescript",
-    "terminal"
+    "terminal",
+    "nimbus",
+    "weather-cli",
+    "natural-language",
+    "fahrenheit",
+    "imperial",
+    "us-weather"
   ],
-  "author": "",
+  "author": "Rithvik",
   "license": "MIT",
   "dependencies": {
     "openai": "^4.20.1",
