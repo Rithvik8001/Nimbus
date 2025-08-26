@@ -184,7 +184,7 @@ async function main(): Promise<void> {
   program
     .name("nimbus")
     .description("AI-powered Weather CLI - No API keys required!")
-    .version("1.2.5")
+    .version("1.2.6")
     .option("-d, --debug", "Enable debug mode", false)
     .option(
       "-u, --units <units>",
